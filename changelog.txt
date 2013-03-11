@@ -1,4 +1,8 @@
 Developer version:
+v2.0
+  - port to linux
+  - disable colors
+  - code reformatting and small refactoring
 v1.7:
 	- menu when user is playing
 	- restart option
