@@ -1,2 +1,7 @@
 out
 .gitignore
+!CMakeLists.txt
+CMakeCache.txt
+CMakeFiles
+Makefile
+*.cmake
