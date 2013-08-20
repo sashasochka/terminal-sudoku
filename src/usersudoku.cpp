@@ -348,5 +348,6 @@ void UserSudoku::init_settings() {
     in.close();
     Sudoku::set_level(atoi(settings["Level"].c_str()));
     Sudoku::set_size(atoi(settings["Field size"].c_str()));
-    Sudoku::set_view_typ(atoi(settings["View type"] .c_str()));
+    Sudoku::set_view_type(atoi(settings["View type"] .c_str()));
 }
+
