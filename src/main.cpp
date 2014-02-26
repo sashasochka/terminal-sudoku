@@ -1,8 +1,7 @@
 #include "usersudoku.h"
-#include <locale>
 
 int main() {
-    setlocale(LC_ALL, "");
+    std::setlocale(LC_ALL, "");
     UserSudoku game;
     game.display_greetings();
 
@@ -10,8 +9,6 @@ int main() {
         game.menu();
         game.generate();
         game.play();
-        game.win();
+        game.win_congrats();
     }
-
-    return 0;
 }

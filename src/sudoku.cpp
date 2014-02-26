@@ -1,19 +1,7 @@
 #include "sudoku.h"
 
-#include <ctime>
-#include <iostream>
-#include <string>
 #include <algorithm>
-#include <vector>
-
-using std::vector;
-using std::find;
-using std::string;
-using std::time;
-using std::ostream;
-using std::cout;
-using std::cin;
-using std::endl;
+#include <ctime>
 
 bool Sudoku::set_size(int size) {
     if (size < 2 || size > 4) {
@@ -22,7 +10,7 @@ bool Sudoku::set_size(int size) {
 
     m_side_size = size;
     field_side_size = size * size;
-    field.assign(field_side_size, vector<short> (field_side_size));
+    field.assign(field_side_size, std::vector<short> (field_side_size));
     return true;
 }
 
@@ -39,7 +27,8 @@ bool Sudoku::set_view_type(int type) {
     if (!type || type > 3) {
         return false;
     }
-    return view_type = true;
+    view_type = true;
+    return view_type;
 }
 
 void Sudoku::fill_random() {
@@ -47,9 +36,9 @@ void Sudoku::fill_random() {
 
     while (true) {
         try {
-            field.assign(field_side_size, vector<short>(field_side_size));
+            field.assign(field_side_size, std::vector<short>(field_side_size));
 
-            for (int k = 0; k < field_side_size * field_side_size; k++) {
+            for (auto k = 0; k < field_side_size * field_side_size; k++) {
                 Coord coord = min_variants();
 
                 if (!put_random(coord.x, coord.y)) {
@@ -67,14 +56,14 @@ void Sudoku::fill_random() {
 }
 
 Sudoku::Coord Sudoku::min_variants() {
-    Coord min_el = {0, 0};
-    int min_vars = 2000000000;
+    Coord min_el{0, 0};
+    auto min_vars = 2000000000;
 
-    for (int y = 0; y < field_side_size; y++) {
-        for (int x = 0; x < field_side_size; x++) {
-            int vars = 0;
+    for (auto y = 0; y < field_side_size; y++) {
+        for (auto x = 0; x < field_side_size; x++) {
+            auto vars = 0;
 
-            for (int i = 0; i < field_side_size; i++)
+            for (auto i = 0; i < field_side_size; i++)
                 if (vars < min_vars && !in_row(y, i + 1) && !in_column(x, i + 1) && !in_square(x, y, i + 1) && !field[y][x]) {
                     vars++;
                 }
@@ -91,27 +80,27 @@ Sudoku::Coord Sudoku::min_variants() {
 }
 
 void Sudoku::random_copy2userfield() {
-    double max_cells = static_cast<double>(field_side_size * field_side_size);
-    double levels[] = {max_cells, max_cells / 1.2, max_cells / 1.4, max_cells / 2};
-    userfield.assign(field_side_size, vector<Cell>(field_side_size));
+    auto max_cells = static_cast<double>(field_side_size * field_side_size);
+    std::vector<double> levels{max_cells, max_cells / 1.2, max_cells / 1.4, max_cells / 2};
+    userfield.assign(field_side_size, std::vector<Cell>(field_side_size));
 
-    for (int i = 0; i < levels[level]; i++) {
-        int x = rand() % field_side_size;
-        int y = rand() % field_side_size;
+    for (auto i = 0; i < levels[level]; i++) {
+        auto x = rand() % field_side_size;
+        auto y = rand() % field_side_size;
 
         if (userfield[y][x].status == Status::closed) {
             userfield[y][x].status = Status::opened;
             userfield[y][x].value = field[y][x];
         } else {
-            i--;
+            --i;
         }
     }
 }
 
 bool Sudoku::put_random(int x, int y) {
-    vector<bool> exception(field_side_size);
+    std::vector<bool> exception(field_side_size);
 
-    while (int n = rand() % field_side_size + 1) {
+    while (auto n = rand() % field_side_size + 1) {
         if (
             in_row    (y, n) ||
             in_column (x, n) ||
@@ -119,7 +108,7 @@ bool Sudoku::put_random(int x, int y) {
        ) {
             exception[n - 1] = true;
 
-            if (find(exception.begin(), exception.end(), false) == exception.end()) {
+            if (std::find(exception.begin(), exception.end(), false) == exception.end()) {
                 return false;
             }
         } else {
@@ -131,19 +120,19 @@ bool Sudoku::put_random(int x, int y) {
     return true;
 }
 
-void Sudoku::user_out(ostream& out_stream) {
-    string nl = string(
+void Sudoku::user_out(std::ostream& out_stream) {
+    auto nl = std::string(
         view_type == 2 || view_type == 3 ?
             field_side_size > 9 ?
                 3 :
                 2 :
                 0, ' ') +
-        string(field_side_size * (field_side_size > 9 ? 3 : 1) + m_side_size - 1, '-');
+            std::string(field_side_size * (field_side_size > 9 ? 3 : 1) + m_side_size - 1, '-');
 
     if (view_type == 2 || view_type == 3) {
-        out_stream << string(2 + (field_side_size > 9), ' ');
+        out_stream << std::string(2 + (field_side_size > 9), ' ');
 
-        for (int i = 0; i < field_side_size; i++) {
+        for (auto i = 0; i < field_side_size; i++) {
             out_stream.width(field_side_size > 9 ? 3 : 1);
 
             if (view_type == 2) {
@@ -157,55 +146,34 @@ void Sudoku::user_out(ostream& out_stream) {
             }
         }
 
-        cout << endl;
+        std::cout << std::endl;
     }
 
-    for (int i = 0; i < field_side_size; i++) {
+    for (auto i = 0; i < field_side_size; i++) {
         if (view_type == 2 || view_type == 3) {
             out_stream.width(field_side_size > 9 ? 2 : 1);
-            cout << i + 1 << ".";
+            std::cout << i + 1 << ".";
         }
 
-        for (int j = 0; j < field_side_size; j++) {
+        for (auto j = 0; j < field_side_size; j++) {
             out_stream.width(field_side_size > 9 ? 3 : 1);
             out_stream << userfield[i][j].value;
 
             if (!((j + 1) % m_side_size) && j != field_side_size - 1) {
-                cout << "|";
+                std::cout << "|";
             }
         }
 
-        out_stream << endl;
+        out_stream << std::endl;
 
         if (!((i + 1) % m_side_size) && i != field_side_size - 1) {
-            cout << nl << endl;
-        }
-    }
-}
-
-void Sudoku::field_out(ostream& out_stream) {
-    string nl(field_side_size * (field_side_size > 9 ? 3 : 1) + m_side_size - 1, '-');
-
-    for (int i = 0; i < field_side_size; i++) {
-        for (int j = 0; j < field_side_size; j++) {
-            out_stream.width(field_side_size > 9 ? 3 : 1);
-            out_stream << field[i][j];
-
-            if (!((j + 1) % m_side_size) && j != field_side_size - 1) {
-                cout << "|";
-            }
-        }
-
-        out_stream << endl;
-
-        if (!((i + 1) % m_side_size) && i != field_side_size - 1) {
-            cout << nl << endl;
+            std::cout << nl << std::endl;
         }
     }
 }
 
 bool Sudoku::in_row(int row_index, int value) {
-    for (int i = 0; i < field_side_size; i++)
+    for (auto i = 0; i < field_side_size; i++)
         if (field[row_index][i] == value) {
             return true;
         }
@@ -214,11 +182,11 @@ bool Sudoku::in_row(int row_index, int value) {
 }
 
 bool Sudoku::in_column(int column_index, int value) {
-    for (int i = 0; i < field_side_size; i++)
+    for (auto i = 0; i < field_side_size; i++) {
         if (field[i][column_index] == value) {
             return true;
         }
-
+    }
     return false;
 }
 
@@ -226,18 +194,19 @@ bool Sudoku::in_square(int x, int y, int value) {
     x = x / m_side_size * m_side_size;
     y = y / m_side_size * m_side_size;
 
-    for (int i = 0; i < m_side_size; i++)
-        for (int j = 0; j < m_side_size; j++)
+    for (auto i = 0; i < m_side_size; i++) {
+        for (auto j = 0; j < m_side_size; j++) {
             if (field[y + i][x + j] == value) {
                 return true;
             }
+        }
+    }
 
     return false;
 }
 
-int Sudoku::pause() {
-    cin.get();
-    return 0;
+void Sudoku::pause() {
+    std::cin.get();
 }
 
 void Sudoku::generate() {
@@ -247,11 +216,11 @@ void Sudoku::generate() {
     last_changed.x = -1;
 }
 
-int Sudoku::cls() {
+void Sudoku::cls() {
 #ifdef WINDOWS
-    return system("cls");
+    system("cls");
 #else
-    return system("clear");
+    system("clear");
 #endif
 }
 
@@ -272,27 +241,27 @@ bool Sudoku::userchange(unsigned int x, unsigned int y, unsigned int n) {
 }
 
 bool Sudoku::is_won() {
-    for (int y = 0; y < field_side_size; y++) {
-        for (int x = 0; x < field_side_size; x++) {
+    for (auto y = 0; y < field_side_size; y++) {
+        for (auto x = 0; x < field_side_size; x++) {
             if (!userfield[y][x].value) {
                 return false;
             }
 
-            for (int i = 0; i < field_side_size; i++)
+            for (auto i = 0; i < field_side_size; i++)
                 if (userfield[y][i].value == userfield[y][x].value && x != i) {
                     return false;
                 }
 
-            for (int i = 0; i < field_side_size; i++)
+            for (auto i = 0; i < field_side_size; i++)
                 if (userfield[i][x].value == userfield[y][x].value && y != i) {
                     return false;
                 }
 
-            int n_x = x / m_side_size * m_side_size;
-            int n_y = y / m_side_size * m_side_size;
+            auto n_x = x / m_side_size * m_side_size;
+            auto n_y = y / m_side_size * m_side_size;
 
-            for (int i = 0; i < m_side_size; i++)
-                for (int j = 0; j < m_side_size; j++)
+            for (auto i = 0; i < m_side_size; i++)
+                for (auto j = 0; j < m_side_size; j++)
                     if (userfield[n_y + i][n_x + j].value == userfield[y][x].value &&
                             (x != n_x + j || y != n_y + i)) {
                         return false;

@@ -5,7 +5,7 @@
 
 class Sudoku {
 private:
-    enum class Status {closed, opened, all};
+    enum class Status {closed, opened};
     struct Cell {
         int value;
         Status status;
@@ -47,8 +47,8 @@ public:
     void generate();
     void user_out(std::ostream& out_stream = std::cout);
     void field_out(std::ostream& out_stream = std::cout);
-    int pause();
-    int cls();
+    void pause();
+    void cls();
     bool userchange(unsigned int x, unsigned int y, unsigned int n);
     bool is_won();
 };
