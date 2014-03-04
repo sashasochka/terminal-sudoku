@@ -3,12 +3,12 @@
 int main() {
     std::setlocale(LC_ALL, "");
     UserSudoku game;
-    game.display_greetings();
+    game.displayGreetings();
 
     while (true) {
         game.menu();
         game.generate();
         game.play();
-        game.win_congrats();
+        game.displayCongratulations();
     }
 }

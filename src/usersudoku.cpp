@@ -1,9 +1,35 @@
 #include "usersudoku.h"
-#include <cstdlib>
+#include <cassert>
 #include <fstream>
 #include <sstream>
 
-void UserSudoku::display_greetings() {
+UserSudoku::UserSudoku(): nWins{0}, nowPlaying{false} {
+    initSettings();
+}
+
+void UserSudoku::clearDisplay() {
+#ifdef WINDOWS
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+void UserSudoku::displayCongratulations() {
+    clearDisplay();
+    sudoku.displayField();
+    std::cout << "\n";
+    ++nWins;
+    std::cout << "Greetings! You have won";
+
+    if (nWins > 1) {
+        std::cout << " " << nWins << " times";
+    }
+
+    std::cout << "!\n\n";
+}
+
+void UserSudoku::displayGreetings() {
     std::cout << R"(
         ^^^^^  ^       ^  ^^^^^^        ^^^^^    ^     ^  ^       ^   Created by
       ^        ^       ^  ^     ^      ^     ^   ^    ^   ^       ^   Sochka
@@ -17,11 +43,78 @@ void UserSudoku::display_greetings() {
      )";
 }
 
+void UserSudoku::displaySettingsMenu() {
+    while (true) {
+        clearDisplay();
+        std::cout << "Options:\n";
+        std::cout << " 1. Level(" << sudoku.getLevel() << ")\n";
+        std::cout << " 2. Field size(" << sudoku.getSideSize() << ")\n";
+        std::cout << " 3. Field type(" << sudoku.getFieldType() << ")\n";
+        std::cout << " 4. Back\n";
+        enum {
+            level = 1, field, view_type, back
+        };
+        int settingsItem;
+        bool firstTime = true;
+
+        do {
+            std::cout << (firstTime ? "Select> " : "Try again> ");
+            std::cin.sync();
+            std::cin.clear();
+            std::cin >> settingsItem;
+            firstTime = false;
+        } while (std::cin.bad() || settingsItem < 1 || settingsItem > back);
+
+        switch (settingsItem) {
+            case level:
+                setLevel();
+                break;
+            case field:
+                setSize();
+                break;
+            case view_type:
+                setViewType();
+                break;
+            case back:
+                clearDisplay();
+                return;
+        }
+    }
+}
+
+void UserSudoku::generate() {
+    sudoku.generate();
+}
+
+void UserSudoku::initSettings() {
+    settingsPath = "~/.sudokusochkarc";
+    std::ifstream in(settingsPath);
+
+    if (!in) {
+        return;
+    }
+
+    std::string settingName;
+
+    while (std::getline(in, settingName, ':')) {
+        while (in.peek() == ' ') {
+            in.get();
+        }
+
+        std::getline(in, settings[settingName], '\n');
+    }
+
+    in.close();
+    sudoku.setLevel(stoul(settings["Level"]));
+    sudoku.setSize(stoul(settings["Field size"]));
+    sudoku.setViewType(stoul(settings["View type"]));
+}
+
 void UserSudoku::menu() {
     while (true) {
         std::cout << "Menu:\n";
 
-        if (now_playing) {
+        if (nowPlaying) {
             std::cout << "1. Return\n";
         } else {
             std::cout << "1. Play\n";
@@ -30,7 +123,7 @@ void UserSudoku::menu() {
         std::cout << "2. Settings\n";
         std::cout << "3. Exit\n";
 
-        if (now_playing) {
+        if (nowPlaying) {
             std::cout << "0. Replay\n";
         }
 
@@ -52,81 +145,36 @@ void UserSudoku::menu() {
             case 0:
                 generate();
                 play();
-                win_congrats();
+                displayCongratulations();
                 break;
             case 1:
                 break;
             case 2:
-                settings_menu();
+                displaySettingsMenu();
                 continue;
             case 3:
                 exit(0);
+            default:
+                assert(false);
         }
 
         break;
     }
 }
 
-void UserSudoku::set_size() {
-    int field_size;
-    std::cout << "Choose field size (2-4):\n";
-
-    for (std::cin >> field_size; !Sudoku::set_size(field_size); std::cin >> field_size) {
-        std::cout << "Incorrect size. Type again: ";
-        std::cin.clear();
-        std::cin.sync();
-    }
-
-    save_setting("Field size", field_size);
-}
-
-void UserSudoku::set_level() {
-    unsigned short level;
-    std::cout << "Set your level(1-3): ";
-
-    for (std::cin >> level; !Sudoku::set_level(level); std::cin >> level) {
-        std::cout << "Incorrect level. Type again: ";
-        std::cin.clear();
-        std::cin.sync();
-    }
-
-    std::cout << "\n";
-    save_setting("Level", level);
-}
-
-void UserSudoku::set_view_type() {
-    unsigned short type;
-    std::cout << "\n";
-    std::cout << "Field view types:\n";
-    std::cout << "1. No labels\n";
-    std::cout << "2. Labels with numbers on left and top side\n";
-    std::cout << "3. Labels with numbers on left side and letters on top\n\n";
-    std::cout << "Select type> ";
-
-    for (std::cin >> type; !Sudoku::set_view_type(type); std::cin >> type) {
-        std::cout << "Incorrect type. Select again> ";
-        std::cin.clear();
-        std::cin.sync();
-    }
-
-    std::cout << "\n";
-    save_setting("View type", type);
-}
-
-void UserSudoku::save_setting(std::string setting_name, int value) {
+void UserSudoku::saveSetting(const std::string& settingName, int value) {
     std::stringstream s;
     s << value;
-    s >> settings[setting_name];
-    // settings[setting_name] = itoa(value, const_cast<char *>(settings[setting_name].c_str()), 10);
-    std::ofstream out(settings_file_path);
+    s >> settings[settingName];
+    std::ofstream out(settingsPath);
 
-    for (std::map<std::string, std::string>::iterator it = settings.begin(); it != settings.end(); it++) {
-        out << it->first << ": ";
+    for (const auto& setting: settings) {
+        out << setting.first << ": ";
 
-        if (it->first == setting_name) {
+        if (setting.first == settingName) {
             out << value;
         } else {
-            out << it->second;
+            out << setting.second;
         }
 
         out << "\n";
@@ -135,14 +183,58 @@ void UserSudoku::save_setting(std::string setting_name, int value) {
     out.close();
 }
 
-void UserSudoku::user_turn() {
+void UserSudoku::setLevel() {
+    unsigned short level;
+    std::cout << "Set your level(1-3): ";
+
+    for (std::cin >> level; !sudoku.setLevel(level); std::cin >> level) {
+        std::cout << "Incorrect level. Type again: ";
+        std::cin.clear();
+        std::cin.sync();
+    }
+
+    std::cout << "\n";
+    saveSetting("Level", level);
+}
+
+void UserSudoku::setSize() {
+    int fieldSize;
+    std::cout << "Choose field size (2-4):\n";
+
+    for (std::cin >> fieldSize; !sudoku.setSize(fieldSize); std::cin >> fieldSize) {
+        std::cout << "Incorrect size. Type again: ";
+        std::cin.clear();
+        std::cin.sync();
+    }
+
+    saveSetting("Field size", fieldSize);
+}
+
+void UserSudoku::setViewType() {
+    unsigned short type;
+    std::cout << "\n";
+    std::cout << "Field view types:\n";
+    std::cout << "1. No labels\n";
+    std::cout << "2. Labels with numbers on left and top side\n";
+    std::cout << "3. Labels with numbers on left side and letters on top\n\n";
+    std::cout << "Select type> ";
+
+    for (std::cin >> type; !sudoku.setViewType(type); std::cin >> type) {
+        std::cout << "Incorrect type. Select again> ";
+        std::cin.clear();
+        std::cin.sync();
+    }
+
+    std::cout << "\n";
+    saveSetting("View type", type);
+}
+
+void UserSudoku::userTurn() {
     static bool OK = true;
     std::cin.clear();
     std::cin.sync();
-    unsigned int x, y, n;
-    char x_c;
-    cls();
-    user_out();
+    clearDisplay();
+    sudoku.displayField();
     std::cout << "\n";
 
     if (!OK) {
@@ -151,7 +243,9 @@ void UserSudoku::user_turn() {
 
     std::cout << "Enter coordinates and value or menu> ";
 
-    switch (get_field_type()) {
+    unsigned int x, y, n;
+    char x_c;
+    switch (sudoku.getFieldType()) {
         case 1:
         case 2:
             std::cin >> y >> x >> n;
@@ -193,96 +287,18 @@ void UserSudoku::user_turn() {
             break;
         default:
             std::cout << "Error: this view type is not supported.\n";
-            exit(1);
+            exit(EXIT_FAILURE);
     }
 
-    OK = !std::cin.fail() && userchange(x - 1, y - 1, n);
-}
-
-void UserSudoku::win_congrats() {
-    cls();
-    user_out();
-    std::cout << "\n";
-    wins++;
-    std::cout << "Greetings! You have won";
-
-    if (wins > 1) {
-        std::cout << " " << wins << " times";
-    }
-
-    std::cout << "!\n\n";
-}
-
-void UserSudoku::settings_menu() {
-    while (true) {
-        cls();
-        std::cout << "Options:\n";
-        std::cout << " 1. Level(" << getlevel() << ")\n";
-        std::cout << " 2. Field size(" << get_m_side_size() << ")\n";
-        std::cout << " 3. Field type(" << get_field_type() << ")\n";
-        std::cout << " 4. Back\n";
-        enum {
-            level = 1, field, view_type, back
-        };
-        int settings_item;
-        bool first_time = true;
-
-        do {
-            std::cout << (first_time ? "Select> " : "Try again> ");
-            std::cin.sync();
-            std::cin.clear();
-            std::cin >> settings_item;
-            first_time = false;
-        } while (std::cin.bad() || settings_item < 1 || settings_item > back);
-
-        switch (settings_item) {
-            case level:
-                set_level();
-                break;
-            case field:
-                set_size();
-                break;
-            case view_type:
-                set_view_type();
-                break;
-            case back:
-                cls();
-                return;
-        }
-    }
+    OK = !std::cin.fail() && sudoku.userChange(x - 1, y - 1, n);
 }
 
 void UserSudoku::play() {
-    now_playing = true;
+    nowPlaying = true;
 
-    while (!is_won()) {
-        user_turn();
+    while (!sudoku.finished()) {
+        userTurn();
     }
 
-    now_playing = false;
+    nowPlaying = false;
 }
-
-void UserSudoku::init_settings() {
-    settings_file_path = "~/.sudokusochkarc";
-    std::ifstream in(settings_file_path);
-
-    if (!in) {
-        return;
-    }
-
-    std::string setting_name;
-
-    while (std::getline(in, setting_name, ':')) {
-        while (in.peek() == ' ') {
-            in.get();
-        }
-
-        std::getline(in, settings[setting_name], '\n');
-    }
-
-    in.close();
-    Sudoku::set_level(atoi(settings["Level"].c_str()));
-    Sudoku::set_size(atoi(settings["Field size"].c_str()));
-    Sudoku::set_view_type(atoi(settings["View type"].c_str()));
-}
-

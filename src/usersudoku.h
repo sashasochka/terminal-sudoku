@@ -1,33 +1,33 @@
 #ifndef USERSUDOKU_H_
 #define USERSUDOKU_H_
+
 #include "sudoku.h"
 #include <iostream>
 #include <map>
 #include <string>
 
-class UserSudoku: public Sudoku {
+class UserSudoku {
 private:
-    int wins;
-    std::string settings_file_path;
+    bool nowPlaying;
+    int nWins;
     std::map<std::string, std::string> settings;
-    bool now_playing;
+    std::string settingsPath;
+    Sudoku sudoku;
 public:
-    UserSudoku(): wins{0}, now_playing{false} {
-        init_settings();
-    }
-    void display_greetings();
+    UserSudoku();
+    void clearDisplay();
+    void displayGreetings();
+    void displayCongratulations();
+    void displaySettingsMenu();
+    void generate();
+    void initSettings();
     void menu();
-    void set_size();
-    void set_level();
-    void user_turn();
-    void win_congrats();
-    void settings_menu();
-    void help();
-    void about();
     void play();
-    void init_settings();
-    void set_view_type();
-    void save_setting(std::string setting_name, int value);
+    void saveSetting(const std::string &settingName, int value);
+    void setLevel();
+    void setSize();
+    void setViewType();
+    void userTurn();
 };
 
 #endif // USERSUDOKU_H_
